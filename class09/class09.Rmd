@@ -1,0 +1,224 @@
+---
+title: "Class 09"
+author: "Kathreeni"
+date: "2/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read our input data
+
+```{r}
+#Save input data file to a new 'data' directory
+fna.data <- "WisconsinCancer.csv"
+wisc.df <- read.csv(fna.data)
+```
+
+Always double check the data.. 
+```{r}
+#Head checks the first 6 items in each column 
+head(wisc.df)
+```
+Looks like there is a funny last column "x", let's check how many samples (i.e patients, rows) and features (i.e. columns) are in this data set
+```{r}
+#number of patients : important to keep in mind that row 1 is the feature titles
+nrow(wisc.df[])
+
+#number of features : imp to keep in mind that column 1 is just patient id, col 2 is ID, so we only want 3 and onwards; AND we want to get rid of the last funny colum 
+ncol(wisc.df[3:32])
+wisc.data <- wisc.df[, 3:32]
+head(wisc.data)
+```
+Add patient ID as row names of our data 
+
+```{r}
+rownames(wisc.data) <- wisc.df$id
+#use head again just to make sure we put it in correctly 
+head(wisc.data)
+```
+If we just want to call out specific columns, we call them out individually using c()
+
+```{r}
+wisc.df[, c(4,10,21)]
+```
+
+Q: How many cancerous samples (Benign vs Malignant) are there? 
+
+```{r}
+table(wisc.df$diagnosis)
+```
+
+Q: How many features are "_mean" values? 
+
+```{r}
+#grep searches for matches by argument pattern within each element of a character vector
+#grep(pattern, x) : will output a vector indicating integers inside the total columns that match with your pattern
+#Adding length() will count the number of values output by grep
+
+length(grep("_mean", colnames(wisc.data)))
+```
+
+```{r}
+inds <- grep("_mean", colnames(wisc.data))
+colnames(wisc.data)[inds]
+
+```
+
+
+Principal Component Analysis (PCA)
+
+Important to first check if data needs to be scaled before performing PCA bc 1) Input variables use different units of measurements and 2) Input variables have slightly different variances 
+
+Determine if it has to be scaled by checking the mean and standard deviaton 
+```{r}
+
+colMeans(wisc.data)
+# apply() will take the input data, function you want to apply, and apply it to the selections you specify apply(input, 1(for rows) or 2(for columns), function)
+apply(wisc.data, 2,mean)
+```
+
+To round the data.. 
+```{r}
+#round to 3 decimal places
+round(apply(wisc.data, 2, mean),3)
+```
+
+Execute PCA with prcomp() function, and save it to wisc.pr
+
+```{r}
+wisc.pr <- prcomp(wisc.data, scale = TRUE)
+summary(wisc.pr)
+```
+Eg PC1 means that 44.27%..
+PC2 indicates that it doesnt do as well as PC1, accounts for 18.97%. 
+Cumulative Proportion is PC1 cumulative + PC2's 18.97%, 
+
+```{r}
+biplot(wisc.pr, choices = 1:2)
+#Here it makes a plot using the rownames as plotting character for biplots, choices 1:2 is referring to PC1 and PC2 of wisc.pr
+```
+
+TO make this cleaner to see, we can make a more standard scatter plot of each observation along PC1 and PC2 ; if you read wisc.pr, you'll see that wisc.pr$x specifies a matrix with the PC's and columns. 
+```{r}
+
+plot(wisc.pr$x[,1], wisc.pr$x[,2], xlab = "PC1", ylab = "PC2")
+```
+
+
+To color the plot.. 
+What do we want to color? 
+```{r}
+#Let's color via diagnosistic result via wisc.df$diagnosis
+plot(wisc.pr$x[,1], wisc.pr$x[,2], col = wisc.df$diagnosis, xlab = ("PC1"), ylab = ("PC2"))
+```
+
+##Make a screen-plot for our PCA results
+This plot will show the proportion of variance captured in each PC 
+
+```{r}
+#wisc.pr (sdevation ) squared will yield the variance
+variance <- wisc.pr$sdev^2
+#want itin proportion
+variance/sum(variance)
+#Make it into a percentage
+pve <- round(variance/sum(variance)*100, 2)
+```
+
+NOw let's plot it! 
+```{r}
+plot(pve, xlab = "Principal Component", ylab = "Proportion of Variance Explained", type = "o")
+```
+
+But let's plot it using a data-driven y-axis 
+```{r}
+
+barplot(pve, xlab = "Principal Component", ylab = "Proportion of Variance Explained", axes = FALSE, names.arg = paste("PC", 1:length(pve)))
+axis(2, round(pve))
+```
+
+```{r}
+#dist to calculate distance between the data points in PC1 and 2
+d <- dist(wisc.pr$x[,1:2])
+#hierarchial clustering is hclust
+hclust(d, method = "ward.D2")
+#ward.D2 is a method of hclust
+```
+
+```{r}
+
+d <- dist(wisc.pr$x[,1:2])
+#let's see wtf this d is
+d
+```
+
+Uh okay. WHat's the hclust??
+```{r}
+hc <- hclust(d, method = "ward.D2")
+hc
+```
+```{r}
+
+d <- dist(wisc.pr$x[,1:2])
+hc <- hclust(d, method = "ward.D2")
+plot(hc )
+```
+Anddddd we're cutting trees... in 3 mini.. trees(ie clusters)
+
+```{r}
+cutree(hc, k = 3)
+#k = 3 groups that we're cutting into???? so this gives us all the patient id's with the group they're cut into (groups 1  / 2/ or 3)
+grp3 <- cutree(hc, k = 3)
+```
+
+
+How do we know how many patients are in each group? Use the table function derpy derp 
+
+```{r}
+table(grp3)
+```
+
+Let's plot the PCA plot colored by the cluster these patients belong in 
+
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,2], xlab = "PC1", ylab = "PC2", col = grp3)
+```
+See how the graph now shows that there's 3 clusters in our originally 2-dimentioned graph of PC1 and PC2? 
+
+Welp!!!??!?!?!?!?!??!!
+
+Cross Tabulaton! 
+
+```{r}
+#table(grp,)
+#We're making 0 for benign and 1 for malignant, quantifying B vs M 
+diagnosis <- wisc.df$diagnosis == "M"
+#basically making additional tables within the grp3 set up 
+table(grp3, diagnosis)
+
+```
+
+Easier version of the stuff above 
+```{r}
+table(grp3, wisc.df$diagnosis )
+```
+
+If you set k = higher number at the cuttree, and table it again, it further analyzes the clusters within bigger clusters; eg within people who are blue, who are active/inactive
+
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata = new)
+npc
+
+```
+
+What's going on ; so.. they're 2 patients and their ranking on these diff PC's? 
+```{r}
+plot(wisc.pr$x[,1:2], col= wisc.df$diagnosis)
+points(npc[,1], npc[,2], col=c("green", "blue"), cex = 2)
+```
+Based on their locations, which patient is more imortant to follow up with? 

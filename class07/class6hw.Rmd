@@ -1,0 +1,39 @@
+---
+title: "Homework Class 6"
+author: "Kathreeni"
+date: "2/1/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Generalized Code
+```{r}
+library(bio3d)
+s1 <- read.pdb("4AKE")  # kinase with drug
+s2 <- read.pdb("1AKE")  # kinase no drug
+s3 <- read.pdb("1E4Y")  # kinase with drug
+trim_plot <- function(x){
+  x.chainA <- trim.pdb(x, chain = "A", elety = "CA")
+  x.b = x.chainA$atom$b
+  plotb3(x.b, sse=x.chainA, typ = "l", ylab = "Bfactor")
+}
+```
+Inputs of the function would be something read from the bio3d package. It can be named directly like above, or called into the function as well ( e.g. trim_plot(read.pdb("4AKE")))
+
+This trim_plot function trims the pdb object to one with character vector of "CA" and chain identifier of "A". 
+
+Then, the embed plotb3 function produces a standard scatter plot with the secondary structures of the grey/black rectangular blocks in the margins. 
+
+```{r}
+
+trim_plot(s1)
+trim_plot(s2)
+trim_plot(s3)
+
+```
+
+To be honest, I don't understand what the rectangular boxes are. I know that they are the "classic" secondary structure annotations specfied by the "sse" argument and I can remove them by setting top = FALSE and/or bot = false in my arguments for plotb3 ;) 
+
+I looked into ?trim_pdb, atom.select{bio3d}, and plot.bio3d{bio3d} for clarification on the SSE annotation and all it says on the sse "secondary structure object as returned from dssp, stride or in certain cases read.pdb." which just loops me back to the ?read.pdb help file. 
