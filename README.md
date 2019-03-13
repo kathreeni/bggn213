@@ -1,4 +1,10 @@
 # bggn213 WI19 Classwork 
 
-Course link for [BGGN213 at UC San Diego](https://bioboot.github.io/bggn213_W19/)
+This is a collection of my work from [BGGN213 at UC San Diego](https://bioboot.github.io/bggn213_W19/)
+Welp this class is over, so here's all the work we did online so you can look and remind yourself on how to do this
+
+## Contents
+- Class04 Introduction to R
+- Class05 Data visualization and Graphics with R 
+- Class06 R Functions
 
