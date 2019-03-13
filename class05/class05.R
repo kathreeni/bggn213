@@ -1,14 +1,19 @@
-#Class 05 Graphics and plots with R :https://bioboot.github.io/bggn213_W19/class-material/lab-5-bggn213.html 
+#' title: "Class 5 R Graphics"
+#' author: "Kathreeni"
+#' date: "Fi Jan 25 19"
+#' output: github_document
+#' ---
+
 #Section 2A: Line Plot 
 
-read.table("bimm143_05_rstats/weight_chart.txt")
+read.table("bimm143_05_rstats/weight_chart.txt", header = TRUE)
 weight <- read.table("bimm143_05_rstats/weight_chart.txt", header = TRUE)
 
-plot(weight, type = "b", pch = 1:3, lwd = 2, cex = 1.5, ylim = c(1,10), xlab = "Age (months)", ylab = "Weight (kg)", main = "Fat Babies", col = c("green", "Black"))
+plot(weight$Age, type = "b", pch = 1:3, lwd = 2, cex = 1.5, ylim = c(1,10), xlab = "Age (months)", ylab = "Weight (kg)", main = "Fat Babies", col = c("green", "Black"))
 
 
 #Section 2B : Barplot
-feat <- read.table("bimm143_05_rstats/feature_counts.txt", sep = "\t")
+feat <- read.table("bimm143_05_rstats/feature_counts.txt", header = TRUE, sep = "\t")
 
 #barplot(feat$Count, names.arg = feat$Feature, las = 2, horiz = TRUE)
 

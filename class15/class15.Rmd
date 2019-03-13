@@ -1,0 +1,208 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Section 1: Differential Expression Analysis
+```{r message=FALSE}
+#Load DESeq2 in the console 
+library(DESeq2)
+```
+
+
+Load our data files 
+```{r}
+metaFile <- "data/GSE37704_metadata.csv"
+countFile <- "data/GSE37704_featurecounts.csv"
+
+#Import the data and take a peek! 
+colData = read.csv(metaFile, row.names = 1)
+head(colData)
+```
+
+```{r}
+#Import the count data 
+countData <- read.csv(countFile, row.names = 1)
+head(countData)
+```
+
+Hm, remember that we need the countData and colData files to match. The first column of the metaData has to match the column titles of the count Data! So let's match them? 
+```{r}
+
+countData <- as.matrix(countData[,2:7])
+#or can do countData <- as.matrix(countData[,-1])
+head(countData)
+
+```
+
+```{r}
+#Check if the colnames and rownames match! 
+row.names(colData) 
+colnames(countData)
+#or: row.names(colData) == colnames(countData)
+#or: all(rownames(colData)== colnames(countData))
+```
+Let's get rid of the zero entries in the files since we don't have data for them. 
+```{r}
+inds <- rowSums(countData)!= 0
+countData = countData[inds,]
+head(countData)
+```
+
+```{r}
+dim(countData)
+```
+
+
+We have `r nrow(countData)` genes remaining in our dataset
+
+##Running DESeq2
+```{r}
+dds = DESeqDataSetFromMatrix(countData = countData, colData = colData, design = ~condition)
+dds = DESeq(dds)
+```
+
+```{r}
+res <- results(dds)
+head(res)
+```
+```{r}
+#Call the summary() function on the results to get a sense of how many genes are up/down regulated at the default 0.1 pvalue cut off 
+summary(res)
+```
+
+Let's make a damn volcano plot
+```{r}
+#rep : will repeat gray ("nrow(res") amount of times
+mycols <- rep("gray", nrow(res))
+mycols[abs(res$log2FoldChange) > 2] <- "red"
+inds <- (res$padj < 0.01) & (abs(res$log2FoldChange) > 2)
+mycols[inds] <- "blue"
+plot(res$log2FoldChange, -log(res$padj), main = "damn volcano plot", col = mycols, xlab = "Log2(FoldChange)", ylab = "-Log(P-Value)")
+```
+
+##Adding gene annotation
+
+> Q. Use the mapIDs() function multiple times to add symbol, entrezid and genename annotation to our results 
+
+```{r}
+#head(res)
+#write.csv(res, file = "deseq_results.csv")
+```
+
+
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+columns(org.Hs.eg.db)
+
+res$symbol = mapIds(org.Hs.eg.db, keys = row.names(res), keytype = "ENSEMBL", column = "SYMBOL", multiVals = "first")
+
+res$entrez = mapIds(org.Hs.eg.db,
+                    keys = row.names(res),
+                    keytype = "ENSEMBL",
+                    column = "ENTREZID",
+                    multiVals ="first")
+
+res$name =   mapIds(org.Hs.eg.db,
+                    keys = row.names(res),
+                    keytype = "ENSEMBL",
+                    column = "GENENAME",
+                    multiVals = "first")
+head(res,10)
+
+```
+
+```{r}
+head(res,10)
+```
+
+Let's reorder these results by adjusted pvalue and save them to a csv file in your current project directory
+```{r}
+
+res = res[order(res$pvalue),]
+write.csv(res, file = "deseq_results.csv")
+```
+
+#Section 2: Pathway Analysis
+KEGG Pathways
+
+One time install of required bioconductor packages : do this in the console 
+
+```{r eval = FALSE}
+source("http://bioconductor.org/biocLite.R")
+biocLite( c("pathview", "gage", "gageData"))
+```
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+
+#Focus on signaling and metabolic pathways only
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+
+#examine the first 3 pathways
+head(kegg.sets.hs, 3)
+```
+
+
+The main gage() function requires a named vector of fold changes, where the names of the values are the Entrez gene IDs.
+
+Note that we used the mapIDs() function above to obtain Entrez gene IDs (stored in res$entrez) and we have the fold change results from DESeq2 analysis (stored in res$log2FoldChange).
+
+```{r}
+foldchanges = res$log2FoldChange
+names(foldchanges) = res$entrez
+head(foldchanges)
+```
+
+```{r}
+#Get the results
+keggres = gage(foldchanges, gsets = kegg.sets.hs)
+
+```
+
+```{r}
+attributes(keggres)
+```
+
+```{r}
+#Look at the first few pathways with the "less" set 
+head(keggres$less)
+```
+
+```{r}
+pathview(gene.data = foldchanges, pathway.id = "hsa04110")
+```
+```{r}
+pathview(gene.data=foldchanges, pathway.id = "hsa04110", kegg.native = FALSE)
+
+#focus on top 5 upregulated pathways here for demo purpose
+keggrespathways <- rownames(keggres$greater)[1:5]
+keggresids = substr(keggrespathways, start = 1, stop = 8)
+keggresids
+```                    
+
+to add something into our markdown : use 
+
+![](happy_days.png)
+
+#Section 4 : Reactome Analysis (http://reactome.org/user/guide)
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+```
+
+```{r}
+
+```
+

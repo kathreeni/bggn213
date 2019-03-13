@@ -1,0 +1,36 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(bio3d)
+```
+
+```{r}
+
+sim <- seqidentity(seq)
+```
+
+
+```{r}
+par(oma = c(7,1,1,1))
+heatmap(sim, symm = TRUE)
+```
+I decided to do blast just my original sequence for Q8 
+```{r}
+ori <- read.fasta("seqdump-7.txt")
+```
+Binding my sequence to blast
+```{r}
+bound <- seqbind(ori$ali)
+```
+Blasting the sequence
+```{r}
+blast.pdb(bound)
+```
+

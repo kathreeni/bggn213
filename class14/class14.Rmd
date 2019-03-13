@@ -1,0 +1,228 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+```{r}
+library(BiocInstaller)
+biocLite()
+biocLite(DESeq2)
+```
+
+Import count data and colData
+```{r}
+counts <- read.csv("airway_scaledcounts.csv", stringsAsFactors = FALSE)
+metadata <-  read.csv("airway_metadata.csv", stringsAsFactors = FALSE)
+```
+
+
+Now look at the data of counts
+```{r}
+head(counts)
+```
+Let's read the metadata
+```{r}
+head(metadata)
+```
+
+How many genes? 
+```{r}
+nrow(counts)
+nrow(metadata)
+```
+How many experiments? 
+
+```{r}
+ncol(counts)
+ncol(metadata)
+```
+##Toy differential gene expression 
+```{r}
+View(metadata
+     )
+```
+Let's check for metadata to counts correspondence
+```{r}
+metadata$id==colnames(counts)[-1]
+```
+So using all(), we can check if it's ALL true / false ; useful for checkpoints, continue if true etc 
+```{r}
+all(metadata$id == colnames(counts)[-1])
+```
+```{r}
+metadata[,"dex"] == control
+metadata$id[metadata[,"dex"] == "control"]
+```
+
+```{r}
+control.ids <- metadata$id[metadata[,"dex"] == "control"]
+control.ids
+```
+Now we use the IDs to extract the contrl counts columns 
+```{r}
+control <- counts[,control.ids]
+rownames(control) <- counts$engene
+rownames(treated) <- counts$engene
+```
+##use edit > rename in scope to change in real time 
+
+Find the column names(ids) of the treated; make a new dataframe of the treated patients
+```{r}
+treated.inds <- metadata$id[metadata[,"dex"] == "treated"]
+treated.inds
+```
+
+```{r}
+
+##use the id's to xtract the control counts columns 
+treated <- counts[,treated.inds]
+head(treated)
+
+```
+Find the mean counts value for each gene in control exps
+
+```{r}
+control.mean <- rowMeans(control)
+head(control.mean)
+```
+Now for the treated... 
+```{r}
+treated.mean <- rowMeans(treated)
+#or do treated.mean <- rowMeans(treated)
+head(treated.mean)
+```
+
+Combine these for ease of bookkeeping 
+```{r}
+meancounts <- data.frame(control.mean, treated.mean)
+View(meancounts)
+```
+
+```{r}
+colSums(meancounts)
+```
+```{r}
+plot(meancounts, main = "mean cunt expression")
+
+```
+Just plotting it seems lacking, let's plot in log to measure for fold changes ; check ?plot.default 
+```{r}
+plot(meancounts$control.mean, meancounts$treated.mean, log = "xy", main = "mean cunt expression")
+```
+```{r}
+meancounts$log2fc <- log2(meancounts[,"treated.mean"]/meancounts[,"control.mean"])
+head(meancounts)
+
+```
+
+We need to filter out any genes with expression of 0 
+```{r}
+#example
+toy <- c(0,0,0,0)
+toy == 0
+which(toy == 0)
+```
+```{r}
+newtoy <- cbind(toy, toy)
+newtoy
+newtoy == 0
+which(newtoy == 0, arr.ind = TRUE)
+
+```
+```{r}
+unique(which(newtoy == 0, arr.ind = TRUE))
+```
+
+
+```{r}
+zero.vals <- which(meancounts[,1:2] == 0, arr.ind = TRUE)
+head(zero.vals)
+to.rm <- unique(zero.vals[,1])
+mycounts <- meancounts[-to.rm,]
+head(mycounts)
+
+```
+
+SO let's identify those genes with a log change of >2 (absvalue)
+
+A common threshold use d for claling something differentially expressed is a log2(foldchange) of greater than or less than +/-2. 
+
+```{r}
+up.ind <- mycounts$log2fc > 2
+up.ind
+down.ind <- mycounts$log2fc < (-2)
+```
+
+
+```{r}
+sum(up.ind)
+sum(down.ind)
+```
+
+```{r}
+head(mycounts[up.ind,])
+```
+
+```{r}
+anno <- read.csv("annotables_grch38.csv")
+head(anno)
+```
+```{r}
+dim(anno)
+```
+```{r}
+mycounts.anno<-merge(x=mycounts, y=anno, by.x="row.names", by.y="ensgene")
+mycounts.anno
+```
+
+```{r}
+#install annotation package and human annotation data
+source("http://bioconductor.org/biocLite.R")
+biocLite("AnnotationDbi")
+biocLite("org.Hs.eg.db")
+```
+
+```{r}
+#in console, type in library(org.Hs.eg.db) and library("AnnotationDbi")
+columns(org.Hs.eg.db)
+```
+##Check with joseph, how did I lose my rows...
+
+##DESeq2 analsis 
+```{r}
+library(DESeq2)
+citation("DESeq2")
+```
+ 
+ Build our DES data?? 
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = counts, colData = metadata, design = ~dex, tidy =TRUE )
+
+dds
+```
+Run the DESeq analysis
+```{r}
+dds <- DESeq(dds)
+```
+Get our results 
+```{r}
+res <- results(dds)
+res
+```
+```{r}
+summary(res, alpha=0.01)
+```
+
+#Volcano Plots: used to highlight the proportion of genes that are both significantly regulated and display a high fold change
+```{r}
+
+```
+
