@@ -1,0 +1,80 @@
+---
+title: "class 17"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Section 1. Protein sequences from healthy and tumor tissue
+```{r}
+library(bio3d)
+```
+
+Q1: Identify sequence regions that contain all 9-mer peptides that are only found in the tumor. Hint: You will need to first identify the sites of mutation in the above sequences and then extract the surrounding subsequence region. This subsequence should encompass all possible 9-mers in the tumor derived sequence. In other words extract the subsequence from 8 residues before and 8 residues after all point mutations in the tumor sequence.
+
+
+```{r}
+seqs <- read.fasta("lecture18_sequences.fa")
+```
+Here we calculate the identity per aligned position, then use the information to find non-identical sites that do not contain gaps (indels) 
+
+The "mutant.sites" are now telling us which locations within our alignment sequence is there a misalignment 
+```{r}
+ide <- conserv(seqs$ali, method = "identity")
+mutant.sites <- which(ide <1)
+```
+
+#Exclude gap positions from analysis 
+```{r}
+gaps <- gap.inspect(seqs)
+mutant.sites <- mutant.sites[mutant.sites %in% gaps$f.inds]
+mutant.sites
+```
+```{r}
+mutant.names <- paste0(seqs$ali["P53_wt", mutant.sites], mutant.sites, seqs$ali["P53_mutant", mutant.sites])
+mutant.names
+```
+
+```{r}
+## Sequence positions surounding each mutant site
+start.position <- mutant.sites - 8
+end.position <-  mutant.sites + 8
+
+# Blank matrix to store sub-sequences
+store.seqs <- matrix("-", nrow=length(mutant.sites), ncol=17)
+rownames(store.seqs) <- mutant.names
+
+## Extract each sub-sequence
+for(i in 1:length(mutant.sites)) {
+  store.seqs[i,] <- seqs$ali["P53_mutant",start.position[i]:end.position[i]]
+}
+
+store.seqs
+```
+
+```{r}
+## First blank out the gap positions 
+store.seqs[store.seqs == "-"] <- ""
+
+## Output a FASTA file for further analysis
+write.fasta(seqs=store.seqs, ids=mutant.names, file="subsequences.fa")
+```
+
+Section 2. Patient HLA typing results and HLA binding prediction:
+```{r}
+results <- read.csv("result-3.csv")
+```
+```{r}
+#results$allele
+#head(results$percentile_rank)
+sort(results$allele)
+rank <- sort(results$percentile_rank)
+```
+#make a subset, and then sort it based on that. *review order and sort: order will give you the indices to sort by, so really you wat to do sort(order())
+```{r}
+20^9
+```
+
+
