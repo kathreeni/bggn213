@@ -7,7 +7,7 @@ Welp this class is over, so here's all the work we did online so you can look an
 To link text, do [Link text](url)
 - Class04 [Introduction to R](https://i.pinimg.com/originals/06/e4/52/06e4528f3f97155e86b5ef9944cfcf3d.gif)
 - Class05 [Data visualization and Graphics with R](https://i.pinimg.com/originals/06/e4/52/06e4528f3f97155e86b5ef9944cfcf3d.gif)
-- Class06 [R Functions](https://github.com/kathreeni/bggn213/blob/master/class06/class06.Rmd)
+- Class06 [R Functions](https://github.com/kathreeni/bggn213/blob/master/class06/class06.html)
 - Class07 [Yaddidah](https://github.com/kathreeni/bggn213/blob/master/class07/class07.Rmd)
 - Class09 [whaaat](https://github.com/kathreeni/bggn213/edit/master/class09/class09.Rmd)
 - Class12 [Structural Bioinformatics Drug Discovery](https://github.com/kathreeni/bggn213/blob/master/class12/class12.Rmd)
