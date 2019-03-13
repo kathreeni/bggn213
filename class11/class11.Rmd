@@ -1,0 +1,154 @@
+---
+title: "Class 11 : Structural Bioinformatics 1"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##The PDB Database
+
+PDB Database Composition
+We've set column 1 as the row names for this data set
+```{r}
+stats <- read.csv("Data Export Summary.csv", row.names = 1)
+stats
+```
+
+Q1: Determine the percentage of structures solved by X-Ray and Electron Microscopy. Also can you determine what proportion of structures are protein
+
+```{r}
+sum(stats$Total)
+sum
+```
+
+Above code solves for total data in all entire stats data set 
+Let's separate these by methods
+```{r}
+pre.by.method <- stats$Total/sum(stats$Total)*100
+names(pre.by.method) <- rownames(stats)
+pre.by.method
+```
+
+Q: What proportion of structures are protein? 
+```{r}
+byprotein <- sum(stats$Proteins)/sum(stats$Total)*100
+round(byprotein, 2)
+```
+To install R Data pasta:  install.packages("datapasta") in console
+```{r}
+data.frame(stringsAsFactors = FALSE,
+   Experimental.Method = c("X-Ray", "NMR", "Electron Microscopy", "Other",
+                           "Multi Method", "Total"),
+              Proteins = c(124770, 10988, 2057, 250, 127, 138192),
+         Nucleic.Acids = c(1993, 1273, 31, 4, 5, 3306),
+    ProteinNA.Complex = c(6451, 257, 723, 6, 2, 7439),
+                 Other = c(10, 8, 0, 13, 1, 32),
+                 Total = c(133224, 12526, 2811, 273, 135, 148969)
+)
+
+```
+
+## Introduction to Bio3D in R
+ 
+Load the Bio3D package; list fns via lbio3d() in consol 
+```{r}
+library(bio3d)
+
+```
+
+```{r}
+hsg1 <- read.pdb("1hsg.pdb")
+hsg1
+```
+
+```{r}
+pdb <- read.pdb("1hsg")
+```
+
+So Barry's lab has this dev version of bio3d that allows for 3D biomolecular structure viewing in R itself. Then you don't have to rely on opening written-out PDB files in programs such as VMD or PyMol
+
+```{r}
+#install.packages("devtools")
+#devtools::install_bitbucket("Grantlab/bio3d-view")
+
+```
+
+Let's try it out
+```{r}
+library(bio3d.view)
+library(rgl)
+```
+```{r}
+view(pdb)
+```
+Nope, can't load the rgl package. 
+
+Moving on with our lives-- 
+
+Extract the protein only portion of this PDB structure: 
+#Section 4: Atom Selection
+```{r}
+ca.inds <- atom.select(pdb, "calpha")
+ca.inds
+```
+
+Atom indices is the atom # I think.. And the xyz is the numeric vector to access the xyz componnet of the input PDB structure object 
+
+So there are 198 calpha's in pdb.. , each with its 3# xyz coordinate (198 x 3 = 594)
+
+But where exactly are they?
+
+```{r}
+pdb$atom[ca.inds$atom,]
+```
+Here, these results indicate that the Calpha's are located @ location 2, 9, 18, 26,... etc . A quick way to check this is to do str(ca.inds) in the R console 
+
+
+```{r}
+head(pdb$atom[ca.inds$atom,])
+```
+
+Let's try to extract the ligand & write out to a separate file? 
+```{r}
+inds <- atom.select(pdb,"ligand")
+inds
+```
+
+There are 45 ligands! :D 
+Let's find out where they are! 
+```{r}
+pdb$atom[inds$atom,]
+
+```
+
+What's going on lmao 
+
+```{r}
+ligand.pdb <- trim.pdb(pdb, inds)
+ligand.pdb
+```
+Uhhhh, think we trimmed out the ligand(we named inds) from the PDB file. 
+```{r}
+library(bio3d.view)
+library(rgl)
+view(ligand.pdb)
+```
+View still not working. 
+
+```{r}
+write.pdb(ligand.pdb, file = "ligand.pdb")
+```
+
+For fun 
+```{r}
+pdb <- read.pdb("1HEL")
+# Normal mode Analysis
+modes <- nma(pdb)
+plot(modes)
+```
+```{r}
+m7 <- mktrj(modes, mode = 7, file = "mode_")
+```
+
