@@ -5,7 +5,7 @@ Welp this class is over, so here's all the work we did online so you can look an
 
 ## Contents
 - [Link text](url)
-- Class04 Introduction to R
+- Class04 [Introduction to R]
 - Class05 Data visualization and Graphics with R 
 - Class06 R Functions
-
+- Class[09](bggn213/class09/class09.Rmd)
